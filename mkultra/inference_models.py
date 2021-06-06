@@ -1,6 +1,6 @@
 from transformers import GPT2LMHeadModel
 from transformers import GPTNeoForCausalLM
-from mkultra import SoftPrompt
+from mkultra.soft_prompt import SoftPrompt
 
 class GPTSoftPromptMixin:
     def prepare_inputs_for_generation(self, input_ids, past=None, **kwargs):
@@ -12,7 +12,7 @@ class GPTSoftPromptMixin:
         # Replace special tokens with soft prompts
         for i in range(input_ids.shape[-1]):
             # Check each id for a special token
-            sp = SoftPrompt.from_special_token(input_ids[:,i])
+            sp = SoftPrompt.from_input_id(input_ids[:,i])
             # If we find one, replace special token and padding with soft prompt
             if sp:
                 inputs_embeds[0,i:i+len(sp),:] = sp.to(self.device).get_input_embeds()[0,:,:]
