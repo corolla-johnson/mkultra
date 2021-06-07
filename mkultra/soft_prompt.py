@@ -19,9 +19,10 @@ class SoftPrompt:
                  key - a special input_id
                  value - a SoftPrompt corresponding to that input_id
     """
-    _loaded_sps = dict()
-    _generic_soft_token_str = "<@>"
+    GENERIC_SOFT_TOKEN_STR = "<@>"
+    _loaded_soft_prompts = dict()
     _tokenizer = None
+    _model = None
 
     def __init__(self, tensor, metadata=None):
         self._tensor = tensor
@@ -49,7 +50,7 @@ class SoftPrompt:
             self._metadata['name'] = "Untitled"
 
         if self._metadata.get('uuid') is None:
-            self._metadata['uuid'] = uuid.uuid4()
+            self._metadata['uuid'] = str(uuid.uuid4())
 
         if self._metadata.get('description') is None:
             self._metadata['description'] = "No description given."
@@ -62,33 +63,47 @@ class SoftPrompt:
 
     @staticmethod
     def _add_to_loaded_sps(sp):
-        input_id = SoftPrompt._tokenizer(sp._unique_token_str(), return_tensor="pt").input_ids
-        SoftPrompt._loaded_sps[input_id] = sp
+        SoftPrompt._tokenizer.add_tokens(sp._unique_token_str())
+        SoftPrompt._model.resize_token_embeddings(len(SoftPrompt._tokenizer))
+
+        input_id = SoftPrompt._tokenizer(sp._unique_token_str(), return_tensors="pt").input_ids[0,0].item()
+
+        print(f"added input_id {input_id}")
+
+        SoftPrompt._loaded_soft_prompts[input_id] = sp
 
     @staticmethod
-    def setup_tokenizer(tokenizer):
+    def setup_tokenizer(tokenizer, model):
         """Sets up a tokenizer for soft prompts.
 
         Needs to called before using a new tokenizer.
         Using multiple tokenizers at the same time is not supported and may cause unexpected behaviour.
         """
-        tokenizer.add_special_tokens(SoftPrompt.get_special_tokens())
+        SoftPrompt._tokenizer = tokenizer
+        SoftPrompt._model = model
+
+        tokenizer.add_tokens(SoftPrompt.get_special_tokens())
+        model.resize_token_embeddings(len(tokenizer))
 
         # Use tokenizer to rebuild _loaded_sps
-        new_loaded_sps = dict()
+        new_loaded_soft_prompts = dict()
 
-        for sp in SoftPrompt._loaded_sps.values():
-            input_id = tokenizer(sp._unique_token_str(), return_tensor="pt").input_ids
-            new_loaded_sps[input_id] = sp
+        for sp in SoftPrompt._loaded_soft_prompts.values():
+            input_id = tokenizer(sp._unique_token_str(), return_tensors="pt").input_ids[0,0].item()
+            new_loaded_soft_prompts[input_id] = sp
 
-        SoftPrompt._loaded_sps = new_loaded_sps
+        SoftPrompt._loaded_soft_prompts = new_loaded_soft_prompts
+
+        return tokenizer
 
     @staticmethod
     def get_special_tokens():
         """Returns the list of special tokens for all loaded soft prompts.
         """
         special_tokens = list()
-        for sp in SoftPrompt._loaded_sps.values():
+        special_tokens.append(SoftPrompt.GENERIC_SOFT_TOKEN_STR)
+
+        for sp in SoftPrompt._loaded_soft_prompts.values():
             special_tokens.append(sp._unique_token_str())
 
         return special_tokens
@@ -102,11 +117,11 @@ class SoftPrompt:
             sp._check_integrity()
 
             # Check if this soft prompt's uuid already exists
-            old_sp = [x for x in SoftPrompt._loaded_sps.values()
+            old_sp = [x for x in SoftPrompt._loaded_soft_prompts.values()
                       if x._metadata['uuid'] == x._metadata['uuid']]
 
             if old_sp.count != 0:
-                sp._metadata['uuid'] = uuid.uuid4()
+                sp._metadata['uuid'] = str(uuid.uuid4())
 
             SoftPrompt._add_to_loaded_sps(sp)
             return sp
@@ -125,9 +140,10 @@ class SoftPrompt:
     def from_inputs_embeds(inputs_embeds, metadata=None):
         """Creates a soft prompt from an embedding tensor.
         """
-        sp = SoftPrompt(inputs_embeds=inputs_embeds, metadata=metadata)
+        sp = SoftPrompt(tensor=inputs_embeds, metadata=metadata)
         sp._check_integrity()
         SoftPrompt._add_to_loaded_sps(sp)
+        return sp
 
     @staticmethod
     def from_tuning_model(model, metadata=None):
@@ -136,14 +152,14 @@ class SoftPrompt:
         raise NotImplementedError()
 
     @staticmethod
-    def from_string(string, model, tokenizer, metadata=None):
+    def from_string(string, model, metadata=None):
         """Creates a soft prompt by tokenizing and embedding a string.
 
         This is useful for testing as it is repeatable.
         You can also use this method to set a starting point for training.
         """
-        tokens = tokenizer(string, return_tensors="pt").input_ids
-        inputs_embeds = model.get_input_embedding()(tokens)
+        tokens = SoftPrompt._tokenizer(string, return_tensors="pt").input_ids
+        inputs_embeds = model.get_input_embeddings()(tokens)
         return SoftPrompt.from_inputs_embeds(inputs_embeds=inputs_embeds, metadata=metadata)
 
     def get_tag_str(self):
@@ -152,10 +168,10 @@ class SoftPrompt:
         This will consist of unique special token containing the prompt's name and UUID,
         followed by a number of '<@>'s that represent individual soft tokens.
         """
-        tag_str = self._unique_special_token_str()
+        tag_str = self._unique_token_str()
 
-        for _ in range(self._metadata['length']):
-            tag_str += SoftPrompt._generic_soft_token_str
+        for _ in range(len(self)-1):
+            tag_str += SoftPrompt.GENERIC_SOFT_TOKEN_STR
 
         return tag_str
 
