@@ -2,7 +2,6 @@ from transformers.pipelines import pipeline
 from mkultra.models.inference import GPT2SoftPromptLM
 from mkultra.tokenizers import GPT2SPTokenizerFast
 from mkultra.soft_prompt import SoftPrompt
-import torch
 
 # You'll need to instantiate mkultra's model and tokenizer classes.
 model = GPT2SoftPromptLM.from_pretrained("gpt2")
@@ -20,7 +19,7 @@ sp = SoftPrompt.from_string("With the court firmly balkanized into three distinc
 # Information about an sp can be printed with
 print(sp)
 
-# Use 'get_tag_str()' to insert the soft prompt
+# Use 'get_tag_str()' to get a tag string that you can add to your context.
 prompt = sp.get_tag_str() + " She"
 
 # The addition operator also works:

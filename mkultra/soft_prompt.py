@@ -112,20 +112,22 @@ class SoftPrompt:
 
     @staticmethod
     def _register_model(model):
-        SoftPrompt._models.append(model)
-        # This needs a tokenizer, but if there are none then vocab size hasn't changed.
-        # This will be done later when _register_tokenizer() is called.
-        if len(SoftPrompt._tokenizers) > 0:
-            SoftPrompt._add_tokens_to_tokenizers()
-            SoftPrompt._resize_model_embeddings()
-            SoftPrompt._refresh_id_lut()
+        if model not in SoftPrompt._models:
+            SoftPrompt._models.append(model)
+            # This needs a tokenizer, but if there are none then vocab size hasn't changed.
+            # This will be done later when _register_tokenizer() is called.
+            if len(SoftPrompt._tokenizers) > 0:
+                SoftPrompt._add_tokens_to_tokenizers()
+                SoftPrompt._resize_model_embeddings()
+                SoftPrompt._refresh_id_lut()
 
     @staticmethod
     def _register_tokenizer(tokenizer):
-        SoftPrompt._tokenizers.append(tokenizer)
-        SoftPrompt._add_tokens_to_tokenizers()
-        SoftPrompt._resize_model_embeddings()
-        SoftPrompt._refresh_id_lut()
+        if tokenizer not in SoftPrompt._tokenizers:
+            SoftPrompt._tokenizers.append(tokenizer)
+            SoftPrompt._add_tokens_to_tokenizers()
+            SoftPrompt._resize_model_embeddings()
+            SoftPrompt._refresh_id_lut()
 
     @staticmethod
     def get_special_token_strs():

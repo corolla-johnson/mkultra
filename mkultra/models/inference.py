@@ -47,13 +47,16 @@ class GPTSoftPromptMixin:
 
         return super().generate(*args, **kwargs)
 
+    # Overriding this because it's the exact right point
+    # to resize embeddings during loading without breaking anything
+    def eval(self):
+        super().eval()
+        SoftPrompt._register_model(self)
 
 class GPT2SoftPromptLM(GPTSoftPromptMixin, GPT2LMHeadModel):
     def __init__(self, config):
         super().__init__(config)
-        SoftPrompt._register_model(self)
 
 class GPTNeoSoftPromptLM(GPTSoftPromptMixin, GPTNeoForCausalLM):
     def __init__(self, config):
         super().__init__(config)
-        SoftPrompt._register_model(self)
