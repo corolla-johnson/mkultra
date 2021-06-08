@@ -13,6 +13,8 @@ for model in EXTRA_ALLOWED_MODELS:
 
 class GPTSoftPromptMixin:
     def prepare_inputs_for_generation(self, input_ids, past=None, **kwargs):
+        super().prepare_inputs_for_generation(input_ids, None, **kwargs)
+
         # Embed everything normally first
         inputs_embeds = self.transformer.wte(input_ids)
 
@@ -47,11 +49,11 @@ class GPTSoftPromptMixin:
 
         return super().generate(*args, **kwargs)
 
-    # Overriding this because it's the exact right point
-    # to resize embeddings during loading without breaking anything
-    def eval(self):
-        super().eval()
-        SoftPrompt._register_model(self)
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path, **kwargs):
+        model = super().from_pretrained(pretrained_model_name_or_path, **kwargs)
+        SoftPrompt._register_model(model)
+        return model
 
 class GPT2SoftPromptLM(GPTSoftPromptMixin, GPT2LMHeadModel):
     def __init__(self, config):

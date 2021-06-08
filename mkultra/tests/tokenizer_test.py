@@ -16,3 +16,4 @@ def test_tokenizer_doesnt_break_special_tokens():
 
     # Assert
     assert length == exp_length
+    assert test_str != sp.get_tag_str()

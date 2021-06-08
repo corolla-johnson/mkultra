@@ -22,3 +22,11 @@ def test_prepare_inputs_for_generation_replaces_embeds_correctly():
 
     # Assert
     assert torch.equal(inputs.get('inputs_embeds'), exp_inputs_embeds)
+
+def test_pipeline_all_ok():
+
+    #Assert no special tokens in output
+    pass
+
+def test_cuda_inference_ok():
+    pass
