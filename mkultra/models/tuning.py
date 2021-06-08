@@ -1,6 +1,5 @@
-from tensorflow.python.util.tf_inspect import Parameter
-from mkultra.soft_embedding import SoftEmbedding
 from transformers import GPT2LMHeadModel, GPTNeoForCausalLM
+from mkultra.soft_prompt import SoftPrompt
 import torch
 import torch.nn as nn
 
@@ -17,12 +16,17 @@ class GPTPromptTuningMixin:
         return model
 
     def initialize_soft_prompt(self, n_tokens = 20):
-        self.n_tokens = n_tokens
         self.learned_embedding = nn.parameter.Parameter(
             self.transformer.wte.weight[:n_tokens].clone().detach())
 
+    def set_soft_prompt_embeds(self, soft_prompt_embeds):
+        self.learned_embedding = nn.parameter.Parameter(soft_prompt_embeds)
+
+    def set_soft_prompt(self, sp: SoftPrompt):
+        self.learned_embedding = nn.parameter.Parameter(sp.get_inputs_embeds())
+
     def get_soft_params(self):
-        return [self.learned_embedding]
+        return self.learned_embedding
 
     def prepare_inputs_for_generation(self, input_ids, past=None, *args, **kwargs):
         # Drop 'past' to make things easier for us later
@@ -45,6 +49,8 @@ class GPTPromptTuningMixin:
         output_hidden_states=None,
         return_dict=None,
     ):
+        n_tokens = self.learned_embedding.shape[0]
+
         inputs_embeds = self.transformer.wte(input_ids)
 
         # Prefix the input embeds with the learned embedding
@@ -54,7 +60,7 @@ class GPTPromptTuningMixin:
 
         # Add '-100's (prevent loss calculation) where the learned embed would be
         if labels is not None:
-            labels = torch.cat([torch.full((1,self.n_tokens), -100).to(self.device),
+            labels = torch.cat([torch.full((1,n_tokens), -100).to(self.device),
                                 labels],
                                 dim=1)
 

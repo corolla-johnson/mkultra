@@ -3,7 +3,7 @@ import uuid
 import datetime
 import torch
 from typing import Dict, Any, Union
-from transformers import PreTrainedModel, PreTrainedTokenizer
+import pickle
 
 class SoftPrompt:
     """
@@ -15,7 +15,7 @@ class SoftPrompt:
     Attributes:
         _tensor: The underlying tensor.
         _metadata: A metadata dictionary. Keys are:
-                   'name', 'uuid', 'description', 'date'
+                   'name', 'uuid', 'description', 'epoch'
 
     Class attributes:
         _loaded_sps: A static dictionary where
@@ -45,7 +45,7 @@ class SoftPrompt:
         return self._tensor.shape[1]
 
     def __str__(self):
-        return (f"{self._metadata['name']} ({self._metadata['date']})\n"
+        return (f"{self._metadata['name']} ({datetime.datetime.fromtimestamp(self._metadata['epoch'])})\n"
                 f"Length: {len(self)}\n"
                 f"UUID:   {self._metadata['uuid']}\n"
                 f"Description:\n"
@@ -77,8 +77,8 @@ class SoftPrompt:
         if self._metadata.get('description') is None:
             self._metadata['description'] = "No description given."
 
-        if self._metadata.get('date') is None:
-            self._metadata['date'] = datetime.datetime.now()
+        if self._metadata.get('epoch') is None:
+            self._metadata['epoch'] = datetime.datetime.now().timestamp()
 
     @staticmethod
     def _register_soft_prompt(sp: 'SoftPrompt'):
@@ -156,12 +156,12 @@ class SoftPrompt:
         """Loads a soft prompt from a file.
         """
         with open(path) as file:
-            sp = json.load(file)
+            sp = pickle.load(file)
             sp._check_integrity()
 
             # Check if this soft prompt's uuid already exists
             old_sp = [x for x in SoftPrompt._soft_prompts
-                      if x._metadata['uuid'] == x._metadata['uuid']]
+                    if x._metadata['uuid'] == x._metadata['uuid']]
 
             if len(old_sp) != 0:
                 sp._metadata['uuid'] = str(uuid.uuid4())
@@ -169,10 +169,34 @@ class SoftPrompt:
             SoftPrompt._register_soft_prompt(sp)
             return sp
 
-    @staticmethod
-    def from_json(json_str: str):
-        """Loads a soft prompt from a JSON serialization.
+    def to_file(self, path):
+        """Save a soft prompt to a path.
         """
+        with open(path, mode='w') as file:
+            pickle.dump(self, file)
+
+    @staticmethod
+    def from_serialized(string: str):
+        """Loads a soft prompt from a serialization.
+        """
+        sp = pickle.loads(string)
+        sp._check_integrity()
+
+        # Check if this soft prompt's uuid already exists
+        old_sp = [x for x in SoftPrompt._soft_prompts
+                  if x._metadata['uuid'] == x._metadata['uuid']]
+
+        if len(old_sp) != 0:
+            sp._metadata['uuid'] = str(uuid.uuid4())
+
+        SoftPrompt._register_soft_prompt(sp)
+        return sp
+
+    def serialize(self):
+        """Serializes the SoftPrompt to a string.
+        This can be used to embed the SoftPrompt inside some other file.
+        """
+        return pickle.dumps(self)
 
     @staticmethod
     def from_input_id(input_id: int):
@@ -188,7 +212,7 @@ class SoftPrompt:
     def from_inputs_embeds(inputs_embeds: torch.Tensor, metadata: Dict[str, Any]=None):
         """Creates a soft prompt from an embedding tensor.
         """
-        sp = SoftPrompt(tensor=inputs_embeds, metadata=metadata)
+        sp = SoftPrompt(tensor=inputs_embeds.clone().detach(), metadata=metadata)
         sp._check_integrity()
         SoftPrompt._register_soft_prompt(sp)
         return sp
@@ -197,7 +221,8 @@ class SoftPrompt:
     def from_tuning_model(model, metadata: Dict[str, Any]=None):
         """Extracts a soft prompt from a PromptTuningModel.
         """
-        raise NotImplementedError()
+        return SoftPrompt.from_inputs_embeds(
+            inputs_embeds=model.get_soft_params(), metadata=metadata)
 
     @staticmethod
     def from_string(string: str, model, tokenizer, metadata: Dict[str, Any]=None):
@@ -215,12 +240,6 @@ class SoftPrompt:
 
         inputs_embeds = model.get_input_embeddings()(tokens)
         return SoftPrompt.from_inputs_embeds(inputs_embeds=inputs_embeds, metadata=metadata)
-
-    def to_json(self):
-        """Serializes the SoftPrompt to a JSON string.
-
-        This can be used to embed the SoftPrompt inside some other file.
-        """
 
     def get_tag_str(self):
         """Returns a string used to mark a location for this soft prompt.
