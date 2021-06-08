@@ -13,8 +13,10 @@ for model in EXTRA_ALLOWED_MODELS:
 
 class GPTSoftPromptMixin:
     def prepare_inputs_for_generation(self, input_ids, past=None, **kwargs):
-        super().prepare_inputs_for_generation(input_ids, None, **kwargs)
+        # Drop 'past'
+        return super().prepare_inputs_for_generation(input_ids, None, **kwargs)
 
+    def replace_special_tokens(self, input_ids):
         # Embed everything normally first
         inputs_embeds = self.transformer.wte(input_ids)
 
@@ -27,16 +29,19 @@ class GPTSoftPromptMixin:
             if sp:
                 inputs_embeds[0,i:i+len(sp),:] = sp.get_inputs_embeds().to(self.device)[0,:,:]
 
-        # Drop input_ids, pass other arguments
-        return {
-            "input_ids": None,
-            "inputs_embeds": inputs_embeds,
-            "use_cache": kwargs.get("use_cache"),
-            # Don't support these arguments for now
-            #"position_ids": inputs['position_ids'],
-            #"attention_mask": inputs['attention_mask'],
-            #"token_type_ids": inputs['token_type_ids'],
-        }
+        return inputs_embeds
+
+    def forward(self, *args, **kwargs):
+        input_ids = kwargs.get('input_ids')
+
+        if input_ids is None:
+            # User is using inputs_embeds, nothing more we can do
+            return super().forward(*args, **kwargs)
+
+        kwargs['input_ids'] = None
+        kwargs['inputs_embeds'] = self.replace_special_tokens(input_ids)
+
+        return super().forward(*args, **kwargs)
 
     @torch.no_grad()
     def generate(self, *args, **kwargs):

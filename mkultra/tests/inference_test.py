@@ -3,7 +3,7 @@ from mkultra.tokenizers import GPT2SPTokenizerFast
 from mkultra.soft_prompt import SoftPrompt
 import torch
 
-def test_prepare_inputs_for_generation_replaces_embeds_correctly():
+def test_replace_special_tokens():
     # Arrange
     model = GPT2SoftPromptLM.from_pretrained("gpt2")
     tokenizer = GPT2SPTokenizerFast.from_pretrained("gpt2")
@@ -18,10 +18,10 @@ def test_prepare_inputs_for_generation_replaces_embeds_correctly():
     exp_inputs_embeds = model.get_input_embeddings()(tokenizer(a_b_c, return_tensors="pt").input_ids)
 
     # Act
-    inputs = model.prepare_inputs_for_generation(input_ids)
+    inputs_embeds = model.replace_special_tokens(input_ids)
 
     # Assert
-    assert torch.equal(inputs.get('inputs_embeds'), exp_inputs_embeds)
+    assert torch.equal(inputs_embeds, exp_inputs_embeds)
 
 def test_pipeline_all_ok():
 
