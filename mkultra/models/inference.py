@@ -12,10 +12,6 @@ for model in EXTRA_ALLOWED_MODELS:
         TextGenerationPipeline.ALLOWED_MODELS.append(model)
 
 class GPTSoftPromptMixin:
-    def prepare_inputs_for_generation(self, input_ids, past=None, **kwargs):
-        # Drop 'past'
-        return super().prepare_inputs_for_generation(input_ids, None, **kwargs)
-
     def replace_special_tokens(self, input_ids):
         # Embed everything normally first
         inputs_embeds = self.transformer.wte(input_ids)
