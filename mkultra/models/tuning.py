@@ -33,7 +33,7 @@ class GPTPromptTuningMixin:
         return super().prepare_inputs_for_generation(input_ids, None, *args, **kwargs)
 
     def _cat_learned_embedding_to_input(self, input_ids, labels):
-        n_tokens = self.learned_embedding.shape[1]
+        n_tokens = self.learned_embedding.shape[-2]
 
         inputs_embeds = self.transformer.wte(input_ids)
 
