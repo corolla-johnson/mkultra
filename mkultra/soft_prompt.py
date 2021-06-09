@@ -4,8 +4,9 @@ import datetime
 import torch
 from typing import Dict, Any, Union
 import pickle
+import base64
 
-class SoftPrompt:
+class SoftPrompt():
     """
     A soft prompt.
 
@@ -156,30 +157,25 @@ class SoftPrompt:
         """Loads a soft prompt from a file.
         """
         with open(path, mode='rb') as file:
-            sp = pickle.load(file)
-            sp._check_integrity()
-
-            # Check if this soft prompt's uuid already exists
-            old_sp = [x for x in SoftPrompt._soft_prompts
-                    if x._metadata['uuid'] == x._metadata['uuid']]
-
-            if len(old_sp) != 0:
-                sp._metadata['uuid'] = str(uuid.uuid4())
-
-            SoftPrompt._register_soft_prompt(sp)
-            return sp
+            j_str = json.load(file)
+            return SoftPrompt.from_json(j_str)
 
     def to_file(self, path):
         """Save a soft prompt to a path.
         """
         with open(path, mode='wb') as file:
-            pickle.dump(self, file)
+            j_str = self.to_json()
+            json.dump(j_str, file)
 
     @staticmethod
-    def from_serialized(string: str):
+    def from_json(string: str):
         """Loads a soft prompt from a serialization.
         """
-        sp = pickle.loads(string)
+        j_dict = json.loads(string)
+
+        metadata = j_dict['metadata']
+        tensor = pickle.loads(base64.b64decode(j_dict['tensor'].encode('ascii')))
+        sp = SoftPrompt(tensor, metadata)
         sp._check_integrity()
 
         # Check if this soft prompt's uuid already exists
@@ -192,11 +188,14 @@ class SoftPrompt:
         SoftPrompt._register_soft_prompt(sp)
         return sp
 
-    def serialize(self):
-        """Serializes the SoftPrompt to a string.
+    def to_json(self):
+        """Serializes the SoftPrompt to a JSON string representation.
         This can be used to embed the SoftPrompt inside some other file.
         """
-        return pickle.dumps(self)
+        j_dict = dict()
+        j_dict['metadata'] = self._metadata
+        j_dict['tensor'] = base64.b64encode(pickle.dumps(self._tensor,protocol=4)).decode('ascii')
+        return json.dumps(j_dict)
 
     @staticmethod
     def from_input_id(input_id: int):
