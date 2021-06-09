@@ -51,8 +51,8 @@ def test_file_io(inference_resources):
     sp_a = SoftPrompt.from_string(" a b c d e f g", model=model, tokenizer=tokenizer)
 
     # Act
-    sp_a.to_file("TEST.pt")
-    sp_b = SoftPrompt.from_file("TEST.pt")
+    sp_a.to_file("TEST.json")
+    sp_b = SoftPrompt.from_file("TEST.json")
 
     # Assert
     assert torch.equal(sp_a._tensor, sp_b._tensor)
@@ -60,22 +60,21 @@ def test_file_io(inference_resources):
     assert sp_a._metadata['description'] == sp_b._metadata['description']
 
     # Teardown
-    os.remove("TEST.pt")
+    os.remove("TEST.json")
 
 def test_file_input_only(inference_resources):
     model, tokenizer = inference_resources
 
     # How to recreate the test file:
-    # sp = SoftPrompt.from_string("TEST", model, tokenizer)
-    # sp.to_file("sample_sps/testing/iotest.pt")
-    # model should be on CPU
+    #sp = SoftPrompt.from_string("TEST", model, tokenizer)
+    #sp.to_file("sample_sps/testing/iotest.json")
 
     # Arrange
     exp_string = "TEST"
     exp_tensor = model.get_input_embeddings()(tokenizer(exp_string, return_tensors="pt").input_ids)
 
     # Act
-    sp_a = SoftPrompt.from_file("sample_sps/testing/iotest.pt")
+    sp_a = SoftPrompt.from_file("sample_sps/testing/iotest.json")
 
     # Assert
     assert torch.equal(sp_a._tensor, exp_tensor)

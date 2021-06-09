@@ -156,16 +156,16 @@ class SoftPrompt():
     def from_file(path: str):
         """Loads a soft prompt from a file.
         """
-        with open(path, mode='rb') as file:
-            j_str = json.load(file)
+        with open(path, mode='r') as file:
+            j_str = file.read()
             return SoftPrompt.from_json(j_str)
 
     def to_file(self, path):
         """Save a soft prompt to a path.
         """
-        with open(path, mode='wb') as file:
+        with open(path, mode='w') as file:
             j_str = self.to_json()
-            json.dump(j_str, file)
+            file.write(j_str)
 
     @staticmethod
     def from_json(string: str):
