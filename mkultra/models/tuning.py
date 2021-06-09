@@ -32,6 +32,24 @@ class GPTPromptTuningMixin:
         # Drop 'past' to make things easier for us later
         return super().prepare_inputs_for_generation(input_ids, None, *args, **kwargs)
 
+    def _cat_learned_embedding_to_input(self, input_ids, labels):
+        n_tokens = self.learned_embedding.shape[1]
+
+        inputs_embeds = self.transformer.wte(input_ids)
+
+        # Prefix the input embeds with the learned embedding
+        inputs_embeds = torch.cat([self.learned_embedding.repeat(inputs_embeds.size(0), 1, 1),
+                                   inputs_embeds],
+                                   dim=1)
+
+        # Add '-100's (prevent loss calculation) where the learned embed would be
+        if labels is not None:
+            labels = torch.cat([torch.full((1,n_tokens), -100).to(self.device),
+                                labels],
+                                dim=1)
+
+        return (inputs_embeds, labels)
+
     def forward(
         self,
         input_ids=None,
@@ -49,20 +67,7 @@ class GPTPromptTuningMixin:
         output_hidden_states=None,
         return_dict=None,
     ):
-        n_tokens = self.learned_embedding.shape[0]
-
-        inputs_embeds = self.transformer.wte(input_ids)
-
-        # Prefix the input embeds with the learned embedding
-        inputs_embeds = torch.cat([self.learned_embedding.repeat(inputs_embeds.size(0), 1, 1),
-                                   inputs_embeds],
-                                   dim=1)
-
-        # Add '-100's (prevent loss calculation) where the learned embed would be
-        if labels is not None:
-            labels = torch.cat([torch.full((1,n_tokens), -100).to(self.device),
-                                labels],
-                                dim=1)
+        inputs_embeds, labels = self._cat_learned_embedding_to_input(input_ids, labels)
 
         # Drop most of the args for now
         return super().forward(

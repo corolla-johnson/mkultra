@@ -1,13 +1,10 @@
-from mkultra.models.inference import GPT2SoftPromptLM
-from mkultra.tokenizers import GPT2SPTokenizerFast
 from mkultra.soft_prompt import SoftPrompt
 import torch
 
-def test_replace_special_tokens():
-    # Arrange
-    model = GPT2SoftPromptLM.from_pretrained("gpt2")
-    tokenizer = GPT2SPTokenizerFast.from_pretrained("gpt2")
+def test_replace_special_tokens(inference_resources):
+    model, tokenizer = inference_resources
 
+    # Arrange
     a = " 1 2 3"
     b = " 4 5 6"
     c = " 7 8 9"
@@ -23,10 +20,14 @@ def test_replace_special_tokens():
     # Assert
     assert torch.equal(inputs_embeds, exp_inputs_embeds)
 
-def test_pipeline_all_ok():
-
+def test_pipeline_inference():
     #Assert no special tokens in output
     pass
 
-def test_cuda_inference_ok():
+def test_generate_inference():
+    #Assert no special tokens in output
+    pass
+
+def test_forward_inference():
+    #Assert no special tokens in output
     pass

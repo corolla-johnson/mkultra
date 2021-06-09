@@ -1,12 +1,9 @@
-from mkultra.models.inference import GPT2SoftPromptLM
-from mkultra.tokenizers import GPT2SPTokenizerFast
 from mkultra.soft_prompt import SoftPrompt
 
-def test_tokenizer_doesnt_break_special_tokens():
-    # Arrange
-    model = GPT2SoftPromptLM.from_pretrained("gpt2")
-    tokenizer = GPT2SPTokenizerFast.from_pretrained("gpt2")
+def test_tokenizer_doesnt_break_special_tokens(inference_resources):
+    model, tokenizer = inference_resources
 
+    # Arrange
     test_str = " a b c d e f g"
     sp = SoftPrompt.from_string(test_str, model=model, tokenizer=tokenizer)
     exp_length = len(sp)

@@ -130,6 +130,13 @@ class SoftPrompt:
             SoftPrompt._refresh_id_lut()
 
     @staticmethod
+    def _hard_reset():
+        SoftPrompt._id_lut = dict()
+        SoftPrompt._soft_prompts = list()
+        SoftPrompt._tokenizers = list()
+        SoftPrompt._models = list()
+
+    @staticmethod
     def get_special_token_strs():
         """Returns the list of special token strings for all loaded soft prompts.
         """
