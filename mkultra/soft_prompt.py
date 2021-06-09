@@ -42,7 +42,7 @@ class SoftPrompt:
         self._metadata = metadata
 
     def __len__(self):
-        return self._tensor.shape[1]
+        return self._tensor.shape[-2]
 
     def __str__(self):
         return (f"{self._metadata['name']} ({datetime.datetime.fromtimestamp(self._metadata['epoch'])})\n"
@@ -155,7 +155,7 @@ class SoftPrompt:
     def from_file(path: str):
         """Loads a soft prompt from a file.
         """
-        with open(path) as file:
+        with open(path, mode='rb') as file:
             sp = pickle.load(file)
             sp._check_integrity()
 
@@ -172,7 +172,7 @@ class SoftPrompt:
     def to_file(self, path):
         """Save a soft prompt to a path.
         """
-        with open(path, mode='w') as file:
+        with open(path, mode='wb') as file:
             pickle.dump(self, file)
 
     @staticmethod

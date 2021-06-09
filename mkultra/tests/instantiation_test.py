@@ -21,6 +21,7 @@ def test_instantiate_multiple_objects():
     assert tokenizer_b in SoftPrompt._tokenizers
     assert sp_a in SoftPrompt._soft_prompts
     assert sp_b in SoftPrompt._soft_prompts
+    assert len(tokenizer_a) == len(tokenizer_b)
 
     # Teardown
     del model_a
