@@ -20,10 +20,10 @@ class GPTPromptTuningMixin:
             self.transformer.wte.weight[:n_tokens].clone().detach())
 
     def set_soft_prompt_embeds(self, soft_prompt_embeds):
-        self.learned_embedding = nn.parameter.Parameter(soft_prompt_embeds)
+        self.learned_embedding = nn.parameter.Parameter(soft_prompt_embeds.clone().detach())
 
     def set_soft_prompt(self, sp: SoftPrompt):
-        self.learned_embedding = nn.parameter.Parameter(sp.get_inputs_embeds())
+        self.learned_embedding = nn.parameter.Parameter(sp.get_inputs_embeds().clone().detach())
 
     def get_soft_params(self):
         return self.learned_embedding
@@ -33,18 +33,25 @@ class GPTPromptTuningMixin:
         return super().prepare_inputs_for_generation(input_ids, None, *args, **kwargs)
 
     def _cat_learned_embedding_to_input(self, input_ids, labels):
+        #print(f"input_ids {input_ids}")
+
         n_tokens = self.learned_embedding.shape[-2]
+        #print(f"n_tokens {n_tokens}")
 
         inputs_embeds = self.transformer.wte(input_ids)
+        #print(f"inputs_embeds {inputs_embeds.shape}")
 
         # Prefix the input embeds with the learned embedding
         inputs_embeds = torch.cat([self.learned_embedding.repeat(inputs_embeds.size(0), 1, 1),
                                    inputs_embeds],
                                    dim=1)
 
-        # Add '-100's (prevent loss calculation) where the learned embed would be
+        #print(f"inputs_embeds after cat {inputs_embeds.shape}")
+        #print(f"labels {labels.shape}")
+
+        # Add '-100's (prevent loss calculation where the learned embed would be)
         if labels is not None:
-            labels = torch.cat([torch.full((1,n_tokens), -100).to(self.device),
+            labels = torch.cat([torch.full((labels.shape[0],n_tokens), -100).to(self.device),
                                 labels],
                                 dim=1)
 
