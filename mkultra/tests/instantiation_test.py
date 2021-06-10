@@ -1,4 +1,4 @@
-from mkultra.models.inference import GPT2SoftPromptLM
+from mkultra.inference import GPT2SoftPromptLM
 from mkultra.tokenizers import GPT2SPTokenizerFast
 from mkultra.soft_prompt import SoftPrompt
 
