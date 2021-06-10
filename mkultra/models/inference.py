@@ -23,7 +23,8 @@ class GPTSoftPromptMixin:
             sp = SoftPrompt.from_input_id(input_id)
             # If we find one, replace special token and padding with soft prompt
             if sp:
-                inputs_embeds[0,i:i+len(sp),:] = sp.get_inputs_embeds().to(self.device)[0,:,:]
+                replacement = sp.get_inputs_embeds().to(self.device).clone().unsqueeze(0)
+                inputs_embeds[0,i:i+len(sp),:] = replacement[0,:,:]
 
         return inputs_embeds
 

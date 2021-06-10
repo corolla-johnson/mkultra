@@ -38,9 +38,9 @@ for i in range(iterations):
 sp = SoftPrompt.from_tuned_model(model)
 sp.to_file("test.json")
 ```
+For finetune-like soft prompts, the [finetune notebook](tuning_finetune.ipynb) demonstrates training on a corpus.
 
-
-For AI text adventures or writing, the [World Info notebook](text_generation.ipynb) notebook demonstrates tuning a soft prompt to describe a character or setting. It's pretty quick!
+For AI text adventures or writing, the [World Info notebook](tuning_world_info.ipynb) notebook demonstrates tuning a soft prompt to describe a character or setting. The turnover time on them is pretty quick.
 
 
 ## Limitations (for now)
