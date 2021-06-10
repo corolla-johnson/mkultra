@@ -18,8 +18,9 @@ def test_cat_learned_embedding(tuning_resources):
     exp_labels = torch.cat([torch.full((1,len(sp)), -100), labels], dim=1)
 
     # Act
-    output = model._cat_learned_embedding_to_input(input_ids, labels)
+    inputs_embeds = model._cat_learned_embedding_to_input(input_ids)
+    labels = model._extend_labels(labels)
 
     # Assert
-    assert torch.equal(output[0], exp_inputs_embeds)
-    assert torch.equal(output[1], exp_labels)
+    assert torch.equal(inputs_embeds, exp_inputs_embeds)
+    assert torch.equal(labels, exp_labels)

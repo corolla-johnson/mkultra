@@ -40,6 +40,10 @@ class SoftPrompt():
 
     def __init__(self, tensor: torch.Tensor, metadata: Dict[str, Any]=None):
         self._tensor = tensor
+
+        #if len(self._tensor.shape) == 2:
+        #    self._tensor.unsqueeze_(0)
+
         self._metadata = metadata
 
     def __len__(self):
@@ -211,7 +215,7 @@ class SoftPrompt():
     def from_inputs_embeds(inputs_embeds: torch.Tensor, metadata: Dict[str, Any]=None):
         """Creates a soft prompt from an embedding tensor.
         """
-        sp = SoftPrompt(tensor=inputs_embeds.clone().detach(), metadata=metadata)
+        sp = SoftPrompt(tensor=inputs_embeds.clone(), metadata=metadata)
         sp._check_integrity()
         SoftPrompt._register_soft_prompt(sp)
         return sp

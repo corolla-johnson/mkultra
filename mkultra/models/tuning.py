@@ -33,20 +33,12 @@ class GPTPromptTuningMixin:
         return super().prepare_inputs_for_generation(input_ids, None, *args, **kwargs)
 
     def _cat_learned_embedding_to_input(self, input_ids):
-        #print(f"input_ids {input_ids}")
-
-        n_tokens = self.learned_embedding.shape[-2]
-        #print(f"n_tokens {n_tokens}")
-
         inputs_embeds = self.transformer.wte(input_ids)
-        #print(f"inputs_embeds {inputs_embeds.shape}")
 
-        # Prefix the input embeds with the learned embedding
         inputs_embeds = torch.cat([self.learned_embedding.repeat(inputs_embeds.size(0), 1, 1),
                                    inputs_embeds],
                                    dim=1)
 
-        #print(f"inputs_embeds after cat {inputs_embeds.shape}")
         return inputs_embeds
 
     def _extend_labels(self, labels):
@@ -56,60 +48,45 @@ class GPTPromptTuningMixin:
         n_batches = labels.shape[0]
         return torch.cat([torch.full((n_batches,n_tokens), -100).to(self.device), labels], dim=1)
 
-    def _extend_position_ids(self, position_ids):
-        # Not seen anything use this so put a breakpoint for now
-        breakpoint()
-        pass
-
     def _extend_attention_mask(self, attention_mask):
         n_tokens = self.learned_embedding.shape[-2]
         n_batches = attention_mask.shape[0]
         return torch.cat([torch.full((n_batches,n_tokens), 1).to(self.device), attention_mask], dim=1)
 
-    def forward(self, *args, **kwargs):
+    def forward(
+        self,
+        input_ids=None,
+        past_key_values=None,
+        attention_mask=None,
+        token_type_ids=None,
+        position_ids=None,
+        head_mask=None,
+        inputs_embeds=None,
+        encoder_hidden_states=None,
+        encoder_attention_mask=None,
+        labels=None,
+        use_cache=None,
+        output_attentions=None,
+        output_hidden_states=None,
+        return_dict=None,
+    ):
+        if input_ids is not None:
+            inputs_embeds = self._cat_learned_embedding_to_input(input_ids)
 
-        if kwargs.get('input_ids') is not None:
-            kwargs['inputs_embeds'] = self._cat_learned_embedding_to_input(kwargs.get('input_ids'))
-            kwargs['input_ids'] = None
-        else:
-            pass
+        if labels is not None:
+            labels = self._extend_labels(labels)
 
-        if kwargs.get('labels') is not None:
-            kwargs['labels'] =  self._extend_labels(kwargs.get('labels'))
-        else:
-            pass
+        if attention_mask is not None:
+            attention_mask = self._extend_attention_mask(attention_mask)
 
-        if kwargs.get('position_ids') is not None:
-            print(f"position_ids.shape {kwargs['position_ids'].shape}")
-            kwargs['position_ids'] = self._extend_position_ids(kwargs.get('position_ids'))
-        else:
-            #print("No position_ids")
-            pass
-
-        if kwargs.get('attention_mask') is not None:
-            print(f"attention_mask.shape {kwargs['attention_mask'].shape}")
-            kwargs['attention_mask'] = self._extend_attention_mask(kwargs.get('attention_mask'))
-        else:
-            #print("No attention_mask")
-            pass
-
-        if kwargs.get('token_type_ids') is not None:
-            print(f"token_type_ids.shape {kwargs['token_type_ids'].shape}")
-            breakpoint()
-        else:
-            #print("No token_type_ids")
-            pass
-
-        if kwargs.get('head_mask') is not None:
-            print(f"head_mask.shape {kwargs['head_mask'].shape}")
-            breakpoint()
-        else:
-            #print("No head_mask")
-            pass
-
-        kwargs['input_ids'] = None
-
-        return super().forward(*args, **kwargs)
+        # Drop most of the args for now
+        return super().forward(
+            attention_mask=attention_mask,
+            inputs_embeds=inputs_embeds,
+            labels=labels,
+            use_cache=use_cache,
+            return_dict=return_dict,
+        )
 
 class GPT2PromptTuningLM(GPTPromptTuningMixin, GPT2LMHeadModel):
     def __init__(self, config):
