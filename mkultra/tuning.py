@@ -35,8 +35,13 @@ class GPTPromptTuningMixin:
     def _cat_learned_embedding_to_input(self, input_ids):
         inputs_embeds = self.transformer.wte(input_ids)
 
-        inputs_embeds = torch.cat([self.learned_embedding.repeat(inputs_embeds.size(0), 1, 1),
-                                   inputs_embeds],
+        if len(list(inputs_embeds.shape)) == 2:
+            ie = inputs_embeds.unsqueeze(0)
+        else:
+            ie = inputs_embeds
+
+        inputs_embeds = torch.cat([self.learned_embedding.repeat(ie.size(0), 1, 1),
+                                   ie],
                                    dim=1)
 
         return inputs_embeds
@@ -44,14 +49,27 @@ class GPTPromptTuningMixin:
     def _extend_labels(self, labels):
         n_tokens = self.learned_embedding.shape[-2]
 
+        if len(list(labels.shape)) == 1:
+            lb = labels.unsqueeze(0)
+        else:
+            lb = labels
+
         # Add '-100's (prevent loss calculation where the learned embed would be)
-        n_batches = labels.shape[0]
-        return torch.cat([torch.full((n_batches,n_tokens), -100).to(self.device), labels], dim=1)
+        n_batches = lb.shape[0]
+        return torch.cat([torch.full((n_batches,n_tokens), -100).to(self.device), lb], dim=1)
 
     def _extend_attention_mask(self, attention_mask):
         n_tokens = self.learned_embedding.shape[-2]
-        n_batches = attention_mask.shape[0]
-        return torch.cat([torch.full((n_batches,n_tokens), 1).to(self.device), attention_mask], dim=1)
+
+        if len(list(attention_mask.shape)) == 1:
+            am = attention_mask.unsqueeze(0)
+        else:
+            am = attention_mask
+
+        breakpoint()
+
+        n_batches = am.shape[0]
+        return torch.cat([torch.full((n_batches,n_tokens), 1).to(self.device), am], dim=1)
 
     def forward(
         self,

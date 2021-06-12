@@ -1,6 +1,15 @@
 from mkultra.soft_prompt import SoftPrompt
 import torch
 
+def test_tuning_forward(tuning_resources):
+    model, tokenizer = tuning_resources
+    model.initialize_soft_prompt(n_tokens=20)
+
+    input_ids = tokenizer("Hello world", return_tensors="pt").input_ids
+    labels = input_ids.clone().detach()
+
+    model(input_ids=input_ids, labels=labels)
+
 def test_cat_learned_embedding(tuning_resources):
     model, tokenizer = tuning_resources
 
