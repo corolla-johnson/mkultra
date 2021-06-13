@@ -14,7 +14,7 @@ for model in EXTRA_ALLOWED_MODELS:
 class GPTSoftPromptMixin:
     def replace_special_tokens(self, input_ids):
         # Embed everything normally first
-        inputs_embeds = self.transformer.wte(input_ids)
+        inputs_embeds = self.transformer.wte(input_ids.to(self.device))
 
         # Replace special tokens with soft prompts
         for i in range(input_ids.shape[-1]):
@@ -29,7 +29,7 @@ class GPTSoftPromptMixin:
         return inputs_embeds
 
     def forward(self, *args, **kwargs):
-        input_ids = kwargs.get('input_ids')
+        input_ids = kwargs.get('input_ids').to(self.device)
 
         if input_ids is None:
             # User is using inputs_embeds, nothing more we can do
@@ -42,6 +42,9 @@ class GPTSoftPromptMixin:
 
     @torch.no_grad()
     def generate(self, *args, **kwargs):
+        # This fixes CUDA for some reason
+        kwargs['input_ids'] = kwargs['input_ids'].to(self.device)
+
         # Ban all special logits from output
         bad_words_ids = kwargs.get('bad_words_ids', list())
 
@@ -56,6 +59,10 @@ class GPTSoftPromptMixin:
         model = super().from_pretrained(pretrained_model_name_or_path, **kwargs)
         SoftPrompt._register_model(model)
         return model
+
+    def prepare_inputs_for_generation(self, input_ids, past=None, *args, **kwargs):
+        input_ids = input_ids.to(self.device)
+        return super().prepare_inputs_for_generation(input_ids, past, *args, **kwargs)
 
 class GPT2SoftPromptLM(GPTSoftPromptMixin, GPT2LMHeadModel):
     def __init__(self, config):
