@@ -95,6 +95,7 @@ class SoftPromptTrainer:
                  n_tokens=20,
                  ema_alpha=0.1,
                  checkpoint_interval=200,
+                 gradient_acc_steps=1,
                  shuffle_seed=None):
 
         self.model=model
@@ -106,6 +107,7 @@ class SoftPromptTrainer:
         self.ema_alpha=ema_alpha
         self.checkpoint_interval=checkpoint_interval
         self.shuffle_seed=shuffle_seed
+        self.gradient_acc_steps=gradient_acc_steps
 
         self._maybe_create_project_directory()
         self.loaded_sp = self._load_latest_checkpoint()
@@ -264,8 +266,11 @@ class SoftPromptTrainer:
             loss = outputs.loss
             loss.backward()
             instant_loss = loss.item()
-            self.optimizer.step()
-            self.optimizer.zero_grad()
+
+            # Gradient accumulation
+            if (session_step%self.gradient_acc_steps==0) or (session_step == (num_training_steps-1)):
+                self.optimizer.step()
+                self.optimizer.zero_grad()
 
             # Discard tensor that was moved to GPU
             del input_ids
