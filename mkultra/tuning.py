@@ -29,6 +29,7 @@ class GPTPromptTuningMixin:
         return self.learned_embedding
 
     def prepare_inputs_for_generation(self, input_ids, past=None, *args, **kwargs):
+        input_ids = input_ids.to(self.device)
         # Drop 'past' to make things easier for us later
         return super().prepare_inputs_for_generation(input_ids, None, *args, **kwargs)
 
@@ -66,10 +67,15 @@ class GPTPromptTuningMixin:
         else:
             am = attention_mask
 
-        breakpoint()
-
         n_batches = am.shape[0]
         return torch.cat([torch.full((n_batches,n_tokens), 1).to(self.device), am], dim=1)
+
+    @torch.no_grad()
+    def generate(self, *args, **kwargs):
+        # This fixes CUDA for some reason
+        kwargs['input_ids'] = kwargs['input_ids'].to(self.device)
+
+        return super().generate(*args, **kwargs)
 
     def forward(
         self,
