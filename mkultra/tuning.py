@@ -23,7 +23,7 @@ class GPTPromptTuningMixin:
         self.learned_embedding = nn.parameter.Parameter(soft_prompt_embeds.clone().detach())
 
     def set_soft_prompt(self, sp: SoftPrompt):
-        self.learned_embedding = nn.parameter.Parameter(sp.get_inputs_embeds().clone().detach())
+        self.learned_embedding = nn.parameter.Parameter(sp.get_inputs_embeds().clone().detach().squeeze(0))
 
     def get_soft_params(self):
         return self.learned_embedding

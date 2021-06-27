@@ -1,14 +1,39 @@
 from mkultra.soft_prompt import SoftPrompt
+from transformers import Adafactor
 import torch
 
-def test_tuning_forward(tuning_resources):
+def test_optimization(tuning_resources):
+    # Arrange
     model, tokenizer = tuning_resources
     model.initialize_soft_prompt(n_tokens=20)
 
     input_ids = tokenizer("Hello world", return_tensors="pt").input_ids
     labels = input_ids.clone().detach()
+    optimizer = Adafactor([model.get_soft_params()])
 
-    model(input_ids=input_ids, labels=labels)
+    # Act
+    model(input_ids=input_ids, labels=labels).loss.backward()
+    optimizer.step()
+
+    # Assert
+    # Just make sure nothing breaks
+
+def test_optimize_sp_from_string(tuning_resources):
+    # Arrange
+    model, tokenizer = tuning_resources
+    sp = SoftPrompt.from_string("TEST", model, tokenizer)
+    model.set_soft_prompt(sp)
+
+    input_ids = tokenizer("Hello world", return_tensors="pt").input_ids
+    labels = input_ids.clone().detach()
+    optimizer = Adafactor([model.get_soft_params()])
+
+    # Act
+    model(input_ids=input_ids, labels=labels).loss.backward()
+    optimizer.step()
+
+    # Assert
+    # Just make sure nothing breaks
 
 def test_cat_learned_embedding(tuning_resources):
     model, tokenizer = tuning_resources
