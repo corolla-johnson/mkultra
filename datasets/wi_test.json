@@ -1,0 +1,11 @@
+[
+    { "call" : " Emma's appearance:", "response" : " tall and elegant, long blonde hair in a ponytail, wears a black tuxedo, cybernetic joints" },
+    { "call" : " Emma's hair is", "response" : " long and blonde, tied in a ponytail" },
+    { "call" : " Emma wears", "response" : " a crisp black pantsuit" },
+    { "call" : " Emma's arms have", "response" : " two guns implanted into them" },
+    { "call" : " Emma's body is", "response" : " cybernetically enhanced, her arms have two implanted guns" },
+    { "call" : " Emma's job:", "response" : " British cyborg assassin, tasked with killing high-profile targets" },
+    { "call" : " Emma's personality:", "response" : " classy, style-conscious, perfectionist, cold, ruthless, and calculating" },
+    { "call" : " Emma's personality:", "response" : " has a warm and motherly side that she only shows to a few people" },
+    { "call" : " Emma's nationality:", "response" : " British" }
+]
