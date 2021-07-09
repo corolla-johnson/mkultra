@@ -22,26 +22,10 @@ See the [text generation notebook](text_generation.ipynb) for pointers on adding
 
 
 ## Training
-```
-model = GPT2PromptTuningLM.from_pretrained("gpt2").to("cuda").train()
-tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
 
-optimizer = Adafactor(params=[model.get_soft_params()])
+For finetune-like soft prompts, the [finetune notebook](https://colab.research.google.com/github/corolla-johnson/mkultra/blob/master/tuning_finetune.ipynb) demonstrates training on a corpus.
 
-for i in range(iterations):
-  optimizer.zero_grad()
-  output = model(input_ids=input_ids, labels=labels)
-  loss = output.loss
-  loss.backward()
-  optimizer.step()
-
-sp = SoftPrompt.from_tuned_model(model)
-sp.to_file("test.json")
-```
-For finetune-like soft prompts, the [finetune notebook](tuning_finetune.ipynb) demonstrates training on a corpus.
-
-For AI text adventures or writing, the [World Info notebook](tuning_world_info.ipynb) notebook demonstrates tuning a soft prompt to describe a character or setting. The turnover time on them is pretty quick.
-
+For AI text adventures or writing, the [World Info notebook](https://colab.research.google.com/github/corolla-johnson/mkultra/blob/master/tuning_world_info.ipynb) notebook demonstrates tuning a soft prompt to describe a character or setting. This is highly experimental.
 
 ## Limitations (for now)
 
