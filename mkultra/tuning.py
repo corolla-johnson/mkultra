@@ -41,7 +41,9 @@ class GPTPromptTuningMixin:
         else:
             ie = inputs_embeds
 
-        inputs_embeds = torch.cat([self.learned_embedding.repeat(ie.size(0), 1, 1),
+        learned_embedding = self.transformer.drop(self.learned_embedding)
+
+        inputs_embeds = torch.cat([learned_embedding.repeat(ie.size(0), 1, 1),
                                    ie],
                                    dim=1)
 
