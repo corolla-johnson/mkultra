@@ -1,4 +1,4 @@
-from transformers import GPT2LMHeadModel, GPTNeoForCausalLM
+from transformers import GPT2LMHeadModel, GPTNeoForCausalLM, GPTJForCausalLM
 from mkultra.soft_prompt import SoftPrompt
 import torch
 import torch.nn as nn
@@ -119,5 +119,9 @@ class GPT2PromptTuningLM(GPTPromptTuningMixin, GPT2LMHeadModel):
         super().__init__(config)
 
 class GPTNeoPromptTuningLM(GPTPromptTuningMixin, GPTNeoForCausalLM):
+    def __init__(self, config):
+        super().__init__(config)
+
+class GPTJPromptTuningLM(GPTPromptTuningMixin, GPTJForCausalLM):
     def __init__(self, config):
         super().__init__(config)
